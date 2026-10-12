@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>通用图片尺寸转换器</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#202633;background:#f3f5f8}
+[hidden]{display:none!important}*{box-sizing:border-box}body{margin:0;padding:28px 16px 48px}
+main{max-width:1080px;margin:auto}.head{margin-bottom:22px}.head h1{margin:0 0 8px;font-size:clamp(24px,4vw,34px)}.head p{margin:0;color:#667085}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.9fr);gap:18px}
+.panel{background:white;border:1px solid #e2e6ed;border-radius:16px;padding:20px;box-shadow:0 4px 18px #17203308}
+.drop{border:2px dashed #c7cfdb;border-radius:12px;padding:24px 16px;text-align:center;background:#fafbfc;cursor:pointer;transition:.15s}
+.drop.drag{border-color:#4361ee;background:#f0f3ff}.drop strong{display:block;margin-bottom:6px}.muted{color:#667085;font-size:13px}
+input,select,button{font:inherit}input[type=number],select{width:100%;padding:10px;border:1px solid #d0d5dd;border-radius:8px;background:white;color:#202633}
+input[type=range]{width:100%}input[type=color]{height:40px;width:100%;border:1px solid #d0d5dd;border-radius:8px;background:white;padding:4px}
+label{display:block;font-size:14px;font-weight:600;margin-bottom:6px}.field{margin-top:16px}.dimensions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.check{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:14px}.check label{margin:0;font-weight:500}
+button,.download{border:0;border-radius:9px;padding:11px 15px;font-weight:650;cursor:pointer;text-decoration:none;display:inline-flex;justify-content:center;align-items:center}
+.primary{background:#3157d5;color:white;width:100%;margin-top:20px}.primary:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#edf0f5;color:#263246}
+.actions{display:flex;gap:10px;margin-top:12px}.actions>*{flex:1}.preview{min-height:280px;background:repeating-conic-gradient(#f0f2f5 0% 25%,#fff 0% 50%) 50%/20px 20px;border-radius:10px;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:10px}
+.preview img{display:block;max-width:100%;max-height:390px;object-fit:contain}
+.crop-section{margin-top:18px;padding-top:16px;border-top:1px solid #e7eaf0}.crop-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}.crop-heading h3{font-size:15px;margin:0}.crop-stage{position:relative;width:100%;height:340px;margin-top:12px;overflow:hidden;border-radius:10px;background:#171b24;touch-action:none;user-select:none}.crop-image{position:absolute;display:block;max-width:none;max-height:none;pointer-events:none}.crop-frame{position:absolute;border:2px dashed #fff;box-shadow:0 0 0 1px #202633;cursor:move;touch-action:none}.crop-shade{position:absolute;background:rgba(8,12,20,.46);backdrop-filter:blur(2px);pointer-events:none}.crop-handle{position:absolute;width:14px;height:14px;border:2px solid #fff;background:#3157d5;border-radius:3px;box-shadow:0 0 0 1px #202633;z-index:2}.crop-handle.nw{left:-7px;top:-7px;cursor:nwse-resize}.crop-handle.ne{right:-7px;top:-7px;cursor:nesw-resize}.crop-handle.sw{left:-7px;bottom:-7px;cursor:nesw-resize}.crop-handle.se{right:-7px;bottom:-7px;cursor:nwse-resize}.crop-help{font-size:12px;color:#667085;line-height:1.5;margin-top:8px}.crop-tools{display:flex;gap:8px;margin-top:10px}.crop-tools button{flex:1;padding:8px;font-size:13px}.placeholder{text-align:center;color:#8a94a6;padding:30px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.stat{background:#f7f8fa;padding:11px;border-radius:9px}.stat span{display:block;color:#667085;font-size:12px}.stat strong{font-size:14px;overflow-wrap:anywhere}.result-title{display:flex;justify-content:space-between;align-items:center;margin:0 0 12px}.result-title h2{font-size:18px;margin:0}.status{font-size:13px;color:#667085;margin-top:12px;min-height:18px}.small{font-size:12px;color:#667085;line-height:1.5;margin-top:14px}
+.crop-section,.crop-help,.crop-tools{}
+.editor{position:relative}.editor-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.editor-head h3{font-size:15px;margin:0}.editor-head .right{display:flex;align-items:center;gap:12px}.editor-head .check{margin:0}
+.close{width:30px;height:30px;padding:0;border-radius:8px;background:#edf0f5;color:#263246;font-size:20px;line-height:1}.close:hover{background:#e0e4ec}
+.editor .crop-stage{margin-top:10px}.drop .reopen{margin-top:12px;padding:8px 14px;font-size:13px}
+.history-head{display:flex;justify-content:space-between;align-items:center;margin:22px 0 10px;gap:8px}.history-head h3{font-size:15px;margin:0}.history-head .btns{display:flex;gap:6px}.history-head button{padding:6px 11px;font-size:13px}.history-head button:disabled{opacity:.4;cursor:not-allowed}
+.steps{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto;border:1px solid #e7eaf0;border-radius:10px;background:#fafbfc}
+.steps li{margin:0}.steps button{width:100%;justify-content:flex-start;text-align:left;gap:10px;padding:9px 12px;border-radius:0;background:transparent;color:#263246;font-weight:500;font-size:13px;border-bottom:1px solid #eef0f4}
+.steps li:last-child button{border-bottom:0}.steps button:hover{background:#f0f3ff}.steps .no{flex:none;min-width:22px;height:22px;border-radius:11px;background:#e3e8f2;color:#44506a;font-size:12px;display:inline-flex;align-items:center;justify-content:center}
+.steps .txt{flex:1;overflow-wrap:anywhere}.steps .cur button{background:#e8edff;color:#1f3fb0;font-weight:700}.steps .cur .no{background:#3157d5;color:#fff}.steps .future button{opacity:.5}.steps .empty{padding:14px;color:#8a94a6;font-size:13px;text-align:center}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.panel{padding:16px}.preview{min-height:200px}}
+</style>
+</head>
+<body>
+<main>
+<header class="head"><h1>图片尺寸转换器</h1><p>本地浏览器处理 · 指定分辨率 · 缩小图片 · 转换格式 · 无需上传服务器</p></header>
+<div class="layout">
+<section class="panel">
+  <div class="drop" id="drop" tabindex="0" role="button" aria-label="选择图片">
+    <strong id="dropTitle">拖拽图片到这里，或点击选择文件</strong>
+    <span class="muted" id="dropHint">支持 JPG、PNG、WebP、GIF（取首帧）、BMP 等浏览器可读取的图片</span>
+    <div><button type="button" class="secondary reopen" id="reopen" hidden>返回裁剪编辑器</button></div>
+    <input id="file" type="file" accept="image/*" hidden>
+  </div>
+  <div class="editor" id="cropEditor" hidden>
+    <div class="editor-head"><h3>裁剪选区</h3><div class="right"><div class="check"><input id="cropEnabled" type="checkbox" checked><label for="cropEnabled">启用</label></div><button type="button" class="close" id="closeEditor" title="关闭裁剪编辑器（保留已选图片和选区）" aria-label="关闭裁剪编辑器">×</button></div></div>
+    <div class="crop-stage" id="cropStage"><img id="cropImage" class="crop-image" alt="裁剪编辑原图"><div id="shadeTop" class="crop-shade"></div><div id="shadeBottom" class="crop-shade"></div><div id="shadeLeft" class="crop-shade"></div><div id="shadeRight" class="crop-shade"></div><div id="cropFrame" class="crop-frame"><i class="crop-handle nw" data-handle="nw"></i><i class="crop-handle ne" data-handle="ne"></i><i class="crop-handle sw" data-handle="sw"></i><i class="crop-handle se" data-handle="se"></i></div></div>
+    <div class="crop-tools"><button type="button" class="secondary" id="cropReset">重置选区</button><button type="button" class="secondary" id="cropCenter">居中选区</button></div>
+    <div class="crop-help">虚线框比例跟随目标分辨率，框外区域不会输出。拖动框调整位置，拖动四角调整大小；点击右上角 × 可返回图片选择，已选图片不会被清除。</div>
+  </div>
+  <div class="field"><label for="width">目标分辨率（像素）</label><div class="dimensions">
+    <div><input id="width" type="number" min="1" max="20000" value="1920" aria-label="目标宽度"></div>
+    <div><input id="height" type="number" min="1" max="20000" value="1080" aria-label="目标高度"></div>
+  </div></div>
+  <div class="check"><input id="ratio" type="checkbox" checked><label for="ratio">锁定宽高比例（修改一边自动计算另一边）</label></div>
+  <div class="field"><label for="mode">尺寸适配方式</label><select id="mode">
+    <option value="contain">保持比例（完整显示，可能留边）</option>
+    <option value="blur">模糊背景填充（完整保留原图）</option>
+    <option value="cover">居中裁剪（铺满目标尺寸）</option>
+    <option value="stretch">拉伸至指定尺寸（可能变形）</option>
+  </select></div>
+  <div class="field"><label for="format">输出格式</label><select id="format">
+    <option value="image/webp">WebP（体积通常较小）</option>
+    <option value="image/jpeg">JPG</option>
+    <option value="image/png">PNG（无损，支持透明）</option>
+  </select></div>
+  <div class="field"><label for="quality">有损压缩质量：<span id="qvalue">85%</span></label><input id="quality" type="range" min="10" max="100" value="85"><div class="muted">仅影响 JPG 和 WebP；PNG 不使用此质量参数。</div></div>
+  <div class="field"><label for="bg">留边背景色（保持比例模式）</label><input id="bg" type="color" value="#ffffff"></div>
+  <button class="primary" id="convert" disabled>立即转换（预览自动更新）</button>
+  <div class="small">提示：转换完全在本机浏览器内完成。为避免内存占用过高，单边最大支持 20,000 像素；实际可处理大小取决于设备内存。</div>
+</section>
+<section class="panel">
+  <div class="result-title"><h2>转换结果预览</h2><span class="muted" id="resultFormat">尚未转换</span></div>
+  <div class="preview" id="preview"><div class="placeholder">选择图片后，转换结果将在这里显示</div></div>
+  <div class="stats">
+    <div class="stat"><span>原图尺寸</span><strong id="originalSize">—</strong></div>
+    <div class="stat"><span>原图文件大小</span><strong id="originalBytes">—</strong></div>
+    <div class="stat"><span>输出尺寸</span><strong id="outputSize">—</strong></div>
+    <div class="stat"><span>输出文件大小</span><strong id="outputBytes">—</strong></div>
+  </div>
+  <div class="actions"><a id="download" class="download primary" href="#" download="converted.webp" style="display:none;margin:0">下载转换图片</a><button id="reset" class="secondary" type="button">重置</button></div>
+  <div class="history-head"><h3>处理步骤</h3><div class="btns"><button type="button" class="secondary" id="undo" disabled title="撤销 (Ctrl+Z)">↶ 撤销</button><button type="button" class="secondary" id="redo" disabled title="重做 (Ctrl+Shift+Z)">↷ 重做</button></div></div>
+  <ol class="steps" id="steps"><li class="empty">载入图片后，裁剪、分辨率、适配方式、格式等操作会记录在这里</li></ol>
+  <div class="muted" style="margin-top:8px">所有步骤都从原图重新计算，撤销 / 重做不会反复压缩图片；点击任意步骤可跳转。</div>
+  <div class="status" id="status" role="status"></div>
+</section>
+</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const fileInput=$('file'), drop=$('drop'), stage=$('cropStage');
+const MODE_NAMES={contain:'保持比例',blur:'模糊背景填充',cover:'居中裁剪',stretch:'拉伸'};
+const FORMAT_NAMES={'image/webp':'WebP','image/jpeg':'JPG','image/png':'PNG'};
+const MAX_HISTORY=100;
+let sourceImage=null, sourceURL=null, resultURL=null, sourceFile=null, sourceRatio=16/9, previewTimer=null, renderVersion=0;
+let crop=null;            // 裁剪框，使用原图像素坐标 {x,y,w,h}，与编辑器显示尺寸无关
+let editorOpen=false, drag=null;
+let history=[], hIndex=-1; // 每一步只保存参数快照，不保存任何已处理的图片
+
+function fmtBytes(n){if(n<1024)return n+' B';if(n<1048576)return (n/1024).toFixed(1)+' KB';return (n/1048576).toFixed(2)+' MB'}
+function setStatus(s){$('status').textContent=s}
+function revoke(url){if(url)URL.revokeObjectURL(url)}
+function schedulePreview(){
+ if(!sourceImage)return;
+ clearTimeout(previewTimer);
+ setStatus('参数已更改，1 秒后更新预览…');
+ previewTimer=setTimeout(convertImage,1000);
+}
+function targetRatio(){const w=Number($('width').value),h=Number($('height').value);return w>0&&h>0?w/h:sourceRatio}
+
+/* ---------- 图片选择器 / 裁剪编辑器切换 ---------- */
+function renderPicker(){
+ const has=!!sourceImage;
+ drop.hidden=has&&editorOpen;
+ $('cropEditor').hidden=!(has&&editorOpen);
+ $('reopen').hidden=!has;
+ $('dropTitle').textContent=has?`已选择：${sourceFile.name}`:'拖拽图片到这里，或点击选择文件';
+ $('dropHint').textContent=has?`${sourceImage.naturalWidth} × ${sourceImage.naturalHeight} · 点击或拖入新图片可替换（将清空处理步骤）`:'支持 JPG、PNG、WebP、GIF（取首帧）、BMP 等浏览器可读取的图片';
+ if(has&&editorOpen)renderCropEditor();
+}
+function openEditor(){if(!sourceImage)return;editorOpen=true;renderPicker()}
+function closeEditor(){editorOpen=false;drag=null;renderPicker()}
+
+/* ---------- 裁剪编辑器 ---------- */
+function metrics(){
+ const sw=stage.clientWidth,sh=stage.clientHeight;
+ if(!sourceImage||!sw||!sh)return null;
+ const nw=sourceImage.naturalWidth,nh=sourceImage.naturalHeight,scale=Math.min(sw/nw,sh/nh);
+ return {scale,x:(sw-nw*scale)/2,y:(sh-nh*scale)/2,w:nw*scale,h:nh*scale};
+}
+function fitCrop(){ // 按目标比例调整选区（以现有选区中心为基准，尽量保持大小），并限制在图内
+ const nw=sourceImage.naturalWidth,nh=sourceImage.naturalHeight,ar=targetRatio();
+ const base=crop||{x:0,y:0,w:nw,h:nh};
+ let w=Math.min(base.w,nw),h=w/ar;if(h>nh){h=nh;w=h*ar}
+ const cx=base.x+base.w/2,cy=base.y+base.h/2;
+ crop={x:Math.max(0,Math.min(cx-w/2,nw-w)),y:Math.max(0,Math.min(cy-h/2,nh-h)),w,h};
+}
+function initialCrop(){crop=null;fitCrop();renderCropEditor()}
+function renderCropEditor(){
+ const m=metrics();if(!m||!crop)return;
+ const img=$('cropImage'),frame=$('cropFrame');
+ img.style.left=m.x+'px';img.style.top=m.y+'px';img.style.width=m.w+'px';img.style.height=m.h+'px';
+ const on=$('cropEnabled').checked,ids=['shadeTop','shadeBottom','shadeLeft','shadeRight'];
+ frame.hidden=!on;ids.forEach(id=>$(id).hidden=!on);
+ if(!on)return;
+ const r={x:m.x+crop.x*m.scale,y:m.y+crop.y*m.scale,w:crop.w*m.scale,h:crop.h*m.scale};
+ frame.style.left=r.x+'px';frame.style.top=r.y+'px';frame.style.width=r.w+'px';frame.style.height=r.h+'px';
+ const set=(id,x,y,w,h)=>{const e=$(id);e.style.left=x+'px';e.style.top=y+'px';e.style.width=Math.max(0,w)+'px';e.style.height=Math.max(0,h)+'px'};
+ set('shadeTop',m.x,m.y,m.w,r.y-m.y);set('shadeBottom',m.x,r.y+r.h,m.w,m.y+m.h-(r.y+r.h));
+ set('shadeLeft',m.x,r.y,r.x-m.x,r.h);set('shadeRight',r.x+r.w,r.y,m.x+m.w-(r.x+r.w),r.h);
+}
+stage.addEventListener('pointerdown',e=>{
+ if(!sourceImage||!crop||!$('cropEnabled').checked)return;
+ const handle=e.target.closest('[data-handle]');
+ if(!handle&&!e.target.closest('#cropFrame'))return;
+ drag={type:handle?'resize':'move',handle:handle?.dataset.handle,sx:e.clientX,sy:e.clientY,orig:{...crop},ratio:crop.w/crop.h,moved:false};
+ stage.setPointerCapture(e.pointerId);e.preventDefault();
+});
+stage.addEventListener('pointermove',e=>{
+ if(!drag)return;const m=metrics();if(!m)return;
+ const nw=sourceImage.naturalWidth,nh=sourceImage.naturalHeight,o=drag.orig;
+ const dx=(e.clientX-drag.sx)/m.scale,dy=(e.clientY-drag.sy)/m.scale;
+ if(drag.type==='move'){
+  crop={...o,x:Math.max(0,Math.min(o.x+dx,nw-o.w)),y:Math.max(0,Math.min(o.y+dy,nh-o.h))};
+ }else{
+  const east=drag.handle.includes('e'),south=drag.handle.includes('s'),ratio=drag.ratio;
+  let w=o.w+(east?dx:-dx),h=o.h+(south?dy:-dy);
+  w=Math.abs(dy)>Math.abs(dx)?h*ratio:w;
+  const maxW=Math.min(east?nw-o.x:o.x+o.w,(south?nh-o.y:o.y+o.h)*ratio);
+  w=Math.min(Math.max(w,Math.min(16,maxW)),maxW);const h2=w/ratio;
+  crop={x:east?o.x:o.x+o.w-w,y:south?o.y:o.y+o.h-h2,w,h:h2};
+ }
+ drag.moved=true;renderCropEditor();schedulePreview();
+});
+const endDrag=()=>{if(drag&&drag.moved)commit();drag=null};
+['pointerup','pointercancel'].forEach(ev=>stage.addEventListener(ev,endDrag));
+window.addEventListener('resize',()=>{if(sourceImage&&editorOpen)renderCropEditor()});
+
+/* ---------- 参数快照与处理步骤 ---------- */
+function snap(){
+ return {w:Number($('width').value),h:Number($('height').value),ratio:$('ratio').checked,cropOn:$('cropEnabled').checked,
+  crop:crop&&{...crop},mode:$('mode').value,format:$('format').value,quality:Number($('quality').value),bg:$('bg').value};
+}
+function applyState(s){
+ $('width').value=s.w;$('height').value=s.h;$('ratio').checked=s.ratio;$('cropEnabled').checked=s.cropOn;
+ $('mode').value=s.mode;$('format').value=s.format;$('quality').value=s.quality;$('qvalue').textContent=s.quality+'%';$('bg').value=s.bg;
+ crop=s.crop&&{...s.crop};if(sourceImage&&editorOpen)renderCropEditor();
+}
+const r0=v=>Math.round(v);
+function cropText(c){return `${r0(c.w)}×${r0(c.h)} @ (${r0(c.x)}, ${r0(c.y)})`}
+function sameCrop(a,b){return !!a===!!b&&(!a||['x','y','w','h'].every(k=>r0(a[k])===r0(b[k])))}
+function diffStates(a,b){
+ const d=[];
+ if(a.w!==b.w||a.h!==b.h)d.push({t:'分辨率',text:`分辨率 ${a.w}×${a.h} → ${b.w}×${b.h}`});
+ else if(!sameCrop(a.crop,b.crop)&&b.crop)d.push({t:'裁剪',text:`裁剪 ${cropText(b.crop)}`});
+ if(a.cropOn!==b.cropOn)d.push({t:'裁剪',text:b.cropOn?'启用裁剪':'停用裁剪'});
+ if(a.ratio!==b.ratio)d.push({t:'比例',text:b.ratio?'锁定宽高比例':'解除宽高比例锁定'});
+ if(a.mode!==b.mode)d.push({t:'适配',text:`适配方式：${MODE_NAMES[b.mode]}`});
+ if(a.format!==b.format)d.push({t:'格式',text:`格式转换：${FORMAT_NAMES[a.format]} → ${FORMAT_NAMES[b.format]}`});
+ if(a.quality!==b.quality)d.push({t:'质量',text:`压缩质量 ${a.quality}% → ${b.quality}%`});
+ if(a.bg!==b.bg)d.push({t:'背景',text:`留边背景色 ${b.bg}`});
+ return d;
+}
+function commit(){ // 把当前参数相对上一步的差异记为新步骤；撤销后继续操作会丢弃被撤销的“未来”步骤
+ if(!sourceImage||hIndex<0)return;
+ const s=snap();
+ if(!Number.isInteger(s.w)||!Number.isInteger(s.h)||s.w<1||s.h<1)return;
+ const d=diffStates(history[hIndex].state,s);if(!d.length)return;
+ history=history.slice(0,hIndex+1);
+ history.push({state:s,label:d.map(x=>x.text).join('；')});
+ if(history.length>MAX_HISTORY)history.shift();
+ hIndex=history.length-1;renderHistory();
+}
+function jumpTo(i,verb){
+ commit(); // 先保存尚未提交的输入
+ if(i<0||i>=history.length||i===hIndex)return;
+ hIndex=i;applyState(history[i].state);renderHistory();schedulePreview();
+ setStatus(`${verb||'已跳转到'}：${history[i].label}。1 秒后基于原图重新生成预览…`);
+}
+const undo=()=>{commit();jumpTo(hIndex-1,'已撤销到')};
+const redo=()=>{commit();jumpTo(hIndex+1,'已重做到')};
+function renderHistory(){
+ const ol=$('steps');ol.innerHTML='';
+ $('undo').disabled=hIndex<=0;$('redo').disabled=hIndex<0||hIndex>=history.length-1;
+ if(!history.length){ol.innerHTML='<li class="empty">载入图片后，裁剪、分辨率、适配方式、格式等操作会记录在这里</li>';return}
+ history.forEach((h,i)=>{
+  const li=document.createElement('li'),b=document.createElement('button');
+  b.type='button';li.className=i===hIndex?'cur':i>hIndex?'future':'';
+  b.innerHTML='<span class="no"></span><span class="txt"></span>';
+  b.firstChild.textContent=i;b.lastChild.textContent=h.label;
+  if(i===hIndex)b.setAttribute('aria-current','step');
+  b.addEventListener('click',()=>jumpTo(i));li.appendChild(b);ol.appendChild(li);
+ });
+ const cur=ol.querySelector('.cur');if(cur)cur.scrollIntoView({block:'nearest'});
+}
+$('undo').addEventListener('click',undo);$('redo').addEventListener('click',redo);
+document.addEventListener('keydown',e=>{
+ if(!(e.ctrlKey||e.metaKey)||e.altKey)return;
+ const t=e.target;if(t&&(t.tagName==='INPUT'&&t.type==='number'))return;
+ const k=e.key.toLowerCase();
+ if(k==='z'&&!e.shiftKey){e.preventDefault();undo()}else if((k==='z'&&e.shiftKey)||k==='y'){e.preventDefault();redo()}
+});
+
+/* ---------- 载入图片 ---------- */
+function loadFile(file){
+ if(!file)return;
+ if(!file.type.startsWith('image/')){setStatus('请选择有效的图片文件。');return}
+ const url=URL.createObjectURL(file),img=new Image();
+ img.onload=()=>{
+  clearTimeout(previewTimer);renderVersion++;
+  revoke(sourceURL);revoke(resultURL);resultURL=null;sourceURL=url;sourceFile=file;sourceImage=img;
+  sourceRatio=img.naturalWidth/img.naturalHeight;
+  $('originalSize').textContent=`${img.naturalWidth} × ${img.naturalHeight}`;
+  $('originalBytes').textContent=fmtBytes(file.size);
+  $('width').value=img.naturalWidth;$('height').value=img.naturalHeight;
+  $('cropEnabled').checked=true;
+  $('convert').disabled=false;$('download').style.display='none';$('resultFormat').textContent='待转换';
+  ['outputSize','outputBytes'].forEach(id=>$(id).textContent='—');
+  $('preview').innerHTML='';const p=new Image();p.src=url;p.alt='原图预览';$('preview').appendChild(p);
+  $('cropImage').src=url;fileInput.value='';
+  editorOpen=true;crop=null;renderPicker();
+  requestAnimationFrame(()=>{
+   initialCrop();
+   history=[{state:snap(),label:'载入原图'}];hIndex=0;renderHistory();
+   setStatus(`已载入：${file.name}`);schedulePreview();
+  });
+ };
+ img.onerror=()=>{revoke(url);setStatus('图片读取失败，请尝试其他格式或文件。')};
+ img.src=url;
+}
+drop.addEventListener('click',e=>{if(e.target.closest('#reopen'))return;fileInput.click()});
+$('reopen').addEventListener('click',openEditor);
+$('closeEditor').addEventListener('click',closeEditor);
+drop.addEventListener('keydown',e=>{if(e.target===drop&&(e.key==='Enter'||e.key===' ')){e.preventDefault();fileInput.click()}});
+fileInput.addEventListener('change',e=>loadFile(e.target.files[0]));
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));
+drop.addEventListener('drop',e=>loadFile(e.dataTransfer.files[0]));
+
+/* ---------- 参数控件 ---------- */
+$('quality').addEventListener('input',()=>{$('qvalue').textContent=$('quality').value+'%';schedulePreview()});
+function onSize(from){
+ if(sourceImage){
+  if($('ratio').checked){
+   if(from==='w'){const w=Number($('width').value);if(w>0)$('height').value=Math.max(1,Math.round(w/sourceRatio))}
+   else{const h=Number($('height').value);if(h>0)$('width').value=Math.max(1,Math.round(h*sourceRatio))}
+  }
+  if(crop&&targetRatio()>0){fitCrop();if(editorOpen)renderCropEditor()}
+ }
+ schedulePreview();
+}
+$('width').addEventListener('input',()=>onSize('w'));
+$('height').addEventListener('input',()=>onSize('h'));
+['width','height','quality'].forEach(id=>$(id).addEventListener('change',commit));
+['ratio','mode','format','bg'].forEach(id=>$(id).addEventListener('change',()=>{schedulePreview();commit()}));
+$('cropEnabled').addEventListener('change',()=>{renderCropEditor();schedulePreview();commit()});
+$('cropReset').addEventListener('click',()=>{initialCrop();schedulePreview();commit()});
+$('cropCenter').addEventListener('click',()=>{
+ if(!crop)return;
+ crop={...crop,x:(sourceImage.naturalWidth-crop.w)/2,y:(sourceImage.naturalHeight-crop.h)/2};
+ renderCropEditor();schedulePreview();commit();
+});
+
+/* ---------- 转换：始终从原图 sourceImage 重新绘制 ---------- */
+function convertImage(){
+ clearTimeout(previewTimer);
+ if(!sourceImage)return;
+ const w=Number($('width').value),h=Number($('height').value);
+ if(!Number.isInteger(w)||!Number.isInteger(h)||w<1||h<1||w>20000||h>20000){setStatus('宽高必须是 1–20000 之间的整数。');return}
+ const thisRender=++renderVersion;
+ const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+ const ctx=canvas.getContext('2d',{alpha:$('format').value!=='image/jpeg'});
+ ctx.imageSmoothingQuality='high';
+ const mode=$('mode').value;
+ const inputImage=sourceImage;
+ let sx=0,sy=0,sw=sourceImage.naturalWidth,sh=sourceImage.naturalHeight;
+ if($('cropEnabled').checked&&crop){sx=crop.x;sy=crop.y;sw=crop.w;sh=crop.h}
+ const drawInput=(dx,dy,dw,dh)=>ctx.drawImage(inputImage,sx,sy,sw,sh,dx,dy,dw,dh);
+ const inputW=sw,inputH=sh;
+ if(mode==='contain'){
+  ctx.fillStyle=$('bg').value;ctx.fillRect(0,0,w,h);
+  const scale=Math.min(w/inputW,h/inputH);
+  const dw=inputW*scale,dh=inputH*scale;
+  drawInput((w-dw)/2,(h-dh)/2,dw,dh);
+ }else if(mode==='blur'){
+  // 用放大裁切后的原图制作模糊底图，并向画布外扩展，避免模糊边缘出现空白。
+  const blur=Math.max(12,Math.min(40,Math.round(Math.min(w,h)*0.025)));
+  const margin=blur*3;
+  const bw=w+margin*2,bh=h+margin*2;
+  const bgScale=Math.max(bw/inputW,bh/inputH);
+  const bgW=inputW*bgScale,bgH=inputH*bgScale;
+  ctx.save();ctx.filter=`blur(${blur}px)`;
+  drawInput((w-bgW)/2,(h-bgH)/2,bgW,bgH);
+  ctx.restore();
+  // 前景图完整保留并按比例缩放，居中覆盖在模糊背景上。
+  const fgScale=Math.min(w/inputW,h/inputH);
+  const fgW=inputW*fgScale,fgH=inputH*fgScale;
+  drawInput((w-fgW)/2,(h-fgH)/2,fgW,fgH);
+ }else if(mode==='cover'){
+  const scale=Math.max(w/inputW,h/inputH);
+  const cw=w/scale,ch=h/scale;
+  ctx.drawImage(inputImage,sx+(inputW-cw)/2,sy+(inputH-ch)/2,cw,ch,0,0,w,h);
+ }else{drawInput(0,0,w,h)}
+ const type=$('format').value,quality=Number($('quality').value)/100;
+ canvas.toBlob(blob=>{
+  if(thisRender!==renderVersion)return;
+  if(!blob){setStatus('转换失败：浏览器无法生成该格式。');return}
+  revoke(resultURL);resultURL=URL.createObjectURL(blob);
+  const out=new Image();out.onload=()=>{ $('preview').innerHTML='';out.alt='转换结果预览';$('preview').appendChild(out); };
+  out.src=resultURL;
+  $('outputSize').textContent=`${w} × ${h}`;$('outputBytes').textContent=fmtBytes(blob.size);
+  const ext=type==='image/jpeg'?'jpg':type==='image/png'?'png':'webp';
+  $('resultFormat').textContent=ext.toUpperCase();
+  const link=$('download');link.href=resultURL;link.download=`${(sourceFile.name.replace(/\.[^.]+$/,'')||'image')}_${w}x${h}.${ext}`;link.style.display='inline-flex';
+  setStatus(`转换完成：${fmtBytes(blob.size)}${blob.size<sourceFile.size?'，比原图小 '+Math.round((1-blob.size/sourceFile.size)*100)+'%':blob.size>sourceFile.size?'，文件比原图大 '+Math.round((blob.size/sourceFile.size-1)*100)+'%':'，文件大小不变'}.`);
+  canvas.width=1;canvas.height=1;
+ },type,type==='image/png'?undefined:quality);
+}
+$('convert').addEventListener('click',convertImage);
+$('reset').addEventListener('click',()=>{
+ clearTimeout(previewTimer);renderVersion++;
+ revoke(sourceURL);revoke(resultURL);sourceURL=null;resultURL=null;sourceImage=null;sourceFile=null;fileInput.value='';
+ crop=null;editorOpen=false;drag=null;history=[];hIndex=-1;renderHistory();renderPicker();
+ $('convert').disabled=true;$('preview').innerHTML='<div class="placeholder">选择图片后，转换结果将在这里显示</div>';
+ ['originalSize','originalBytes','outputSize','outputBytes'].forEach(id=>$(id).textContent='—');
+ $('resultFormat').textContent='尚未转换';$('download').style.display='none';setStatus('');
+});
+window.addEventListener('beforeunload',()=>{revoke(sourceURL);revoke(resultURL)});
+</script>
+
+</body>
+</html>
